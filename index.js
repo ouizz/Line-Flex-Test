@@ -1,24 +1,26 @@
+const express = require('express');
 const line = require('@line/bot-sdk');
 
 const config = {
-  channelAccessToken: 'B8EAmE1jDDO2753uzbdEPBSMedTq5DFp0TjjAd/3SsOfh5jZfY+IVIMWxSoBfdUPvon4Yu7/vjdAVowntV7clW6lrUy9uJPZYJMp66DUGfr0HTZmyvKGoNNKbijez757cTSYTK5CjVAZrauw+5RVrgdB04t89/1O/w1cDnyilFU=', // ใส่ Channel Access Token จาก LINE Developers
-  channelSecret: '8824246de8dcc7bd7d04d7c61de1aeef'             // ใส่ Channel Secret
+  channelAccessToken: 'ใส่_CHANNEL_ACCESS_TOKEN_ของคุณ',
+  channelSecret: 'ใส่_CHANNEL_SECRET_ของคุณ'
 };
 
+const app = express();
 const client = new line.messagingApi.MessagingApiClient({
   channelAccessToken: config.channelAccessToken
 });
 
-module.exports = async (req, res) => {
-  // LINE จะยิง Verify มาด้วย POST request
-  if (req.method !== 'POST') {
-    return res.status(200).send('OK');
-  }
+// หน้าแรกสำหรับเช็คว่าเซิร์ฟเวอร์ทำงานปกติ
+app.get('/', (req, res) => {
+  res.send('LINE Bot is running!');
+});
 
+// รับ Webhook
+app.post('/api/webhook', line.middleware(config), async (req, res) => {
   try {
     const events = req.body.events;
 
-    // ตรวจสอบกรณี LINE กดปุ่ม Verify (events จะเป็น array ว่าง [])
     if (!events || events.length === 0) {
       return res.status(200).json({});
     }
@@ -50,9 +52,33 @@ module.exports = async (req, res) => {
                       contents: [
                         {
                           type: 'text',
-                          text: '⚡ Super Sale ลด 20%',
+                          text: '⚡ ดิลพิเศษ Super Sale',
                           weight: 'bold',
-                          size: 'xl'
+                          size: 'xl',
+                          color: '#FF334B'
+                        },
+                        {
+                          type: 'text',
+                          text: 'คอร์สเรียนลดสูงสุดทันที 20%',
+                          weight: 'bold',
+                          size: 'md',
+                          margin: 'md'
+                        }
+                      ]
+                    },
+                    footer: {
+                      type: 'box',
+                      layout: 'vertical',
+                      contents: [
+                        {
+                          type: 'button',
+                          action: {
+                            type: 'uri',
+                            label: 'รับสิทธิ์เลย',
+                            uri: 'https://line.me'
+                          },
+                          style: 'primary',
+                          color: '#06C755'
                         }
                       ]
                     }
@@ -70,4 +96,11 @@ module.exports = async (req, res) => {
     console.error(error);
     return res.status(500).end();
   }
-};
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server listening on port ${PORT}`);
+});
+
+module.exports = app;
